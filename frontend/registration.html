@@ -27,9 +27,7 @@
                 <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
                 <i class='bx bxs-lock-alt'></i>
             </div>
-
             <button type="submit" class="btn">Register</button>
-            
             <div class="login-link">
                 <p>Already have an account? <a href="index.html">Login</a></p>
             </div>
@@ -37,7 +35,7 @@
     </div>
 
     <script>
-        document.getElementById("registrationForm").addEventListener("submit", function(event){
+        document.getElementById("registrationForm").addEventListener("submit", async function(event){
             event.preventDefault();
             const username = document.getElementById("newUsername").value;
             const email = document.getElementById("email").value;
@@ -49,9 +47,28 @@
                 return;
             }
 
-            console.log("New Username: ", username);
-            console.log("Email: ", email);
-            alert("Registration Successful!");
+            try {
+                const response = await fetch('http://localhost:5142/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, email, password })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert("Registration Successful!");
+                    // Optional: Redirect to login page
+                    window.location.href = 'index.html';
+                } else {
+                    alert(result.message || "Registration Failed");
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert("Registration Failed");
+            }
         });
     </script>
 </body>

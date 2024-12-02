@@ -36,16 +36,35 @@
     </div>
 
     <script>
-        document.getElementById("loginForm").addEventListener("submit", function(event){
+        document.getElementById("loginForm").addEventListener("submit", async function(event){
             event.preventDefault();
             const username = document.getElementById("username").value;
             const password = document.getElementById("password").value;
 
-            console.log("Username: ", username);
-            console.log("Password:", password);
+            try {
+                const response = await fetch('http://localhost:5142/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                const result = await response.json();
 
-            // Optional: You could also display the values on the page
-            alert(`Username: ${username}\nPassword: ${password}`);
+                if (response.ok){
+                    localStorage.setItem('userData', JSON.stringify({
+                        username: result.username,
+                        email: result.email
+                    }));
+                    window.location.href = 'welcome.html';
+                } else {
+                    alert(result.message || "Login Failed");
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert("Login Failed. Please check server connection.")
+                
+            }
         });
     </script>
 </body>
