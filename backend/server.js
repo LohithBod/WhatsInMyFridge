@@ -30,6 +30,34 @@ function generateMemberId(){
     return crypto.randomBytes(5).toString('hex').toUpperCase();
 }
 
+app.get('/member-info', (req, res) => {
+    const { memberId } = req.query;
+
+    if (!memberId) {
+        return res.status(400).json({ message: 'Member ID is required' });
+    }
+
+    const query = `
+        SELECT food, beverage 
+        FROM member_info 
+        WHERE member_id = ?
+    `;
+
+    connection.query(query, [memberId], (err, results) => {
+        if (err) {
+            console.error('Error fetching member info:', err);
+            return res.status(500).json({ message: 'Server error' });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ message: 'Member info not found' });
+        }
+
+        res.status(200).json(results[0]);
+    });
+});
+
+
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
   
