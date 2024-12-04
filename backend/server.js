@@ -75,28 +75,56 @@ app.post('/register', async (req, res) => {
 
         const memberId = generateMemberId();
         
-        //query to insert row in table "users"
-        const query = 'INSERT INTO users (username, email, password, member_id) VALUES (?, ?, ?, ?)';
-        
-        connection.query(query, [username, email, hashedPassword, memberId], (err, result) => {
+        // Start a transaction to ensure both inserts succeed
+        connection.beginTransaction((err) => {
             if (err) {
-                console.error('Error registering user: ', err);
-                if (err.code === 'ER_DUP_ENTRY') {
-                    return res.status(400).json({ message: 'Username or email already exists' });
-                }
-                return res.status(500).json({ message: 'Registration failed' });
+                return res.status(500).json({ message: 'Transaction start failed' });
             }
 
-            res.status(201).json({ 
-                message: 'User registered successfully',
-                memberId: memberId 
+            // Query to insert row in "users" table
+            const userQuery = 'INSERT INTO users (username, email, password, member_id) VALUES (?, ?, ?, ?)';
+            
+            connection.query(userQuery, [username, email, hashedPassword, memberId], (err, userResult) => {
+                if (err) {
+                    return connection.rollback(() => {
+                        if (err.code === 'ER_DUP_ENTRY') {
+                            return res.status(400).json({ message: 'Username or email already exists' });
+                        }
+                        return res.status(500).json({ message: 'Registration failed' });
+                    });
+                }
+
+                // Query to insert row in "member_info" table
+                const memberInfoQuery = 'INSERT INTO member_info (member_id, registration_date) VALUES (?, NOW())';
+                
+                connection.query(memberInfoQuery, [memberId], (err, memberInfoResult) => {
+                    if (err) {
+                        return connection.rollback(() => {
+                            return res.status(500).json({ message: 'Member info registration failed' });
+                        });
+                    }
+
+                    // Commit the transaction
+                    connection.commit((err) => {
+                        if (err) {
+                            return connection.rollback(() => {
+                                return res.status(500).json({ message: 'Transaction commit failed' });
+                            });
+                        }
+
+                        res.status(201).json({ 
+                            message: 'User registered successfully',
+                            memberId: memberId 
+                        });
+                    });
+                });
             });
         });
     } catch (error) {
         console.error('Error hashing password: ', error);
         res.status(500).json({ message: 'Registration failed' });
     }
-});         
+});
 
 // Start server
 const server = app.listen(port, () => {
