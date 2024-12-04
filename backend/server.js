@@ -3,17 +3,18 @@ const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const cors = require('cors');
+const crypto = require('crypto');
 
 const app = express();
-const port = 5142;
+const port = process.env.PORT || 1143;
 
 app.use(cors());
 app.use(bodyParser.json());
 
 const connection = mysql.createConnection({
     host: 'localhost',
-    user: 'lohithbodipati@gmail.com',     // Replace with your MySQL username
-    password: 'LoboDaxter#129', // Replace with your MySQL password
+    user: 'lohithbodipati@gmail.com',
+    password: 'LoboDaxter#129',
     database: 'user_registration_db'
 });
 
@@ -24,6 +25,10 @@ connection.connect((err) => {
     }
     console.log('Connected to MySQL database');
 });
+
+function generateMemberId(){
+    return crypto.randomBytes(5).toString('hex').toUpperCase();
+}
 
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
@@ -61,34 +66,51 @@ app.post('/login', (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
-const { username, email, password } = req.body;
+    const { username, email, password } = req.body;
 
-try {
-    // Hash the password
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    try {
+        // Hashing password
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // SQL query to insert new user
-    const query = 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)';
-    
-    connection.query(query, [username, email, hashedPassword], (err, result) => {
-    if (err) {
-        console.error('Error registering user: ', err);
-        if (err.code === 'ER_DUP_ENTRY') {
-        return res.status(400).json({ message: 'Username or email already exists' });
-        }
-        return res.status(500).json({ message: 'Registration failed' });
+        const memberId = generateMemberId();
+        
+        //query to insert row in table "users"
+        const query = 'INSERT INTO users (username, email, password, member_id) VALUES (?, ?, ?, ?)';
+        
+        connection.query(query, [username, email, hashedPassword, memberId], (err, result) => {
+            if (err) {
+                console.error('Error registering user: ', err);
+                if (err.code === 'ER_DUP_ENTRY') {
+                    return res.status(400).json({ message: 'Username or email already exists' });
+                }
+                return res.status(500).json({ message: 'Registration failed' });
+            }
+
+            res.status(201).json({ 
+                message: 'User registered successfully',
+                memberId: memberId 
+            });
+        });
+    } catch (error) {
+        console.error('Error hashing password: ', error);
+        res.status(500).json({ message: 'Registration failed' });
     }
-
-    res.status(201).json({ message: 'User registered successfully' });
-    });
-} catch (error) {
-    console.error('Error hashing password: ', error);
-    res.status(500).json({ message: 'Registration failed' });
-}
-});
+});         
 
 // Start server
-app.listen(port, () => {
+const server = app.listen(port, () => {
 console.log(`Server running on http://localhost:${port}`);
+});
+
+//Handling shutting down server
+process.on('SIGINT', () => {
+    console.log('Closing MySQL connection...');
+    connection.end((err) => {
+        if (err) console.error('Error closing MySQL connection:', err);
+        server.close(() => {
+            console.log('Server closed');
+            process.exit(0);
+        });
+    });
 });
