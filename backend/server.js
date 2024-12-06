@@ -1,3 +1,4 @@
+require('dotenv').config(); 
 const express = require('express');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
@@ -6,16 +7,16 @@ const cors = require('cors');
 const crypto = require('crypto');
 
 const app = express();
-const port = process.env.PORT || 1143;
+const port = process.env.PORT || 3143;
 
 app.use(cors());
 app.use(bodyParser.json());
 
 const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'lohithbodipati@gmail.com',
-    password: 'LoboDaxter#129',
-    database: 'user_registration_db'
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
 });
 
 connection.connect((err) => {
@@ -57,6 +58,35 @@ app.get('/member-info', (req, res) => {
     });
 });
 
+app.post('/update-member-items', (req, res) => {
+    const { memberId, food, beverage } = req.body;
+
+    if (!memberId) {
+        return res.status(400).json({ message: 'Member ID is required' });
+    }
+
+    // Prepare the update query
+    const query = `
+        UPDATE member_info 
+        SET food = CONCAT_WS(', ', food, ?), 
+            beverage = CONCAT_WS(', ', beverage, ?) 
+        WHERE member_id = ?
+    `;
+
+    connection.query(query, [food || null, beverage || null, memberId], (err, result) => {
+        if (err) {
+            console.error('Error updating member items:', err);
+            return res.status(500).json({ message: 'Server error' });
+        }
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Member not found' });
+        }
+
+        res.status(200).json({ message: 'Items updated successfully' });
+    });
+});
+
 
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
@@ -84,7 +114,8 @@ app.post('/login', (req, res) => {
         res.status(200).json({ 
           message: 'Login successful', 
           username: user.username,
-          email: user.email 
+          email: user.email,
+          memberId: user.member_id
         });
       } else {
         // Password doesn't match
@@ -96,9 +127,20 @@ app.post('/login', (req, res) => {
 app.post('/register', async (req, res) => {
     const { username, email, password } = req.body;
 
+    // Basic input validation
+    if (!username || !email || !password) {
+        return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    // Email validation (simple regex)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: 'Invalid email format' });
+    }
+
     try {
         // Hashing password
-        const saltRounds = 10;
+        const saltRounds = parseInt(process.env.SALT_ROUNDS) || 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
         const memberId = generateMemberId();
@@ -106,6 +148,7 @@ app.post('/register', async (req, res) => {
         // Start a transaction to ensure both inserts succeed
         connection.beginTransaction((err) => {
             if (err) {
+                console.error('Transaction start error:', err);
                 return res.status(500).json({ message: 'Transaction start failed' });
             }
 
@@ -114,6 +157,7 @@ app.post('/register', async (req, res) => {
             
             connection.query(userQuery, [username, email, hashedPassword, memberId], (err, userResult) => {
                 if (err) {
+                    console.error('User insert error:', err);
                     return connection.rollback(() => {
                         if (err.code === 'ER_DUP_ENTRY') {
                             return res.status(400).json({ message: 'Username or email already exists' });
@@ -127,6 +171,7 @@ app.post('/register', async (req, res) => {
                 
                 connection.query(memberInfoQuery, [memberId], (err, memberInfoResult) => {
                     if (err) {
+                        console.error('Member info insert error:', err);
                         return connection.rollback(() => {
                             return res.status(500).json({ message: 'Member info registration failed' });
                         });
@@ -135,6 +180,7 @@ app.post('/register', async (req, res) => {
                     // Commit the transaction
                     connection.commit((err) => {
                         if (err) {
+                            console.error('Transaction commit error:', err);
                             return connection.rollback(() => {
                                 return res.status(500).json({ message: 'Transaction commit failed' });
                             });
@@ -149,7 +195,7 @@ app.post('/register', async (req, res) => {
             });
         });
     } catch (error) {
-        console.error('Error hashing password: ', error);
+        console.error('Registration error:', error);
         res.status(500).json({ message: 'Registration failed' });
     }
 });
