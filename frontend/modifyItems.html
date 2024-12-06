@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modify Items</title>
+    <link rel="stylesheet" href="style.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+<body>
+    <div class="wrapper">
+        <h1>Modify Fridge Contents</h1>
+        <form id="modifyItemsForm">
+            <div class="input-box">
+                <label for="foodInput">Add Food Item:</label>
+                <input type="text" id="foodInput" name="food" placeholder="Enter Food Item">
+                <i class='bx bxs-dish'></i>
+            </div>
+            <div class="input-box">
+                <label for="beverageInput">Add Beverage Item:</label>
+                <input type="text" id="beverageInput" name="beverage" placeholder="Enter Beverage Item">
+                <i class='bx bxs-drink'></i>
+            </div>
+            <button type="submit" class="btn">Update Items</button>
+            <button type="button" onclick="window.location.href='welcome.html'" class="btn">Back to Welcome</button>
+        </form>
+        <div id="message" class="message"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('modifyItemsForm');
+            const messageDiv = document.getElementById('message');
+
+            // Verify user data on page load
+            const userData = JSON.parse(localStorage.getItem('userData'));
+            if (!userData || !userData.memberId) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const foodInput = document.getElementById('foodInput');
+                const beverageInput = document.getElementById('beverageInput');
+
+                try {
+                    const response = await fetch('http://localhost:3143/update-member-items', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            memberId: userData.memberId,
+                            food: foodInput.value,
+                            beverage: beverageInput.value
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        messageDiv.textContent = 'Items updated successfully!';
+                        messageDiv.style.color = 'green';
+                        foodInput.value = '';
+                        beverageInput.value = '';
+                    } else {
+                        messageDiv.textContent = result.message || 'Failed to update items';
+                        messageDiv.style.color = 'red';
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    messageDiv.textContent = 'An error occurred while updating items';
+                    messageDiv.style.color = 'red';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

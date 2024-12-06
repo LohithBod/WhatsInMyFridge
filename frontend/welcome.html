@@ -14,11 +14,14 @@
             <p>Email: <span id="welcomeEmail"></span></p>
         </div>
         <div id="memberInfo">
-            <h2>Your Inventory</h2>
+            <h2>Fridge Contents</h2>
             <p>Food: <span id="memberFood"></span></p>
             <p>Beverage: <span id="memberBeverage"></span></p>
         </div>
-        <button onclick="logout()" class="btn">Logout</button>
+        <div class="button-group">
+            <button onclick="logout()" class="btn">Logout</button>
+            <button onclick="window.location.href='modifyItems.html'" class="btn">Modify Items</button>
+        </div>
     </div>
 
     <script>
@@ -32,7 +35,7 @@
 
                 // Fetch member info
                 try {
-                    const response = await fetch(`http://localhost:1143/member-info?memberId=${userData.memberId}`);
+                    const response = await fetch(`http://localhost:3143/member-info?memberId=${userData.memberId}`);
                     const memberInfo = await response.json();
 
                     document.getElementById('memberFood').textContent = memberInfo.food || 'No food items';
@@ -56,4 +59,3 @@
     </script>
 </body>
 </html>
-
