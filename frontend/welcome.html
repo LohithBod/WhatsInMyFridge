@@ -15,8 +15,14 @@
         </div>
         <div id="memberInfo">
             <h2>Fridge Contents</h2>
-            <p>Food: <span id="memberFood"></span></p>
-            <p>Beverage: <span id="memberBeverage"></span></p>
+            <div>
+                <p>Food:</p>
+                <ul id="memberFood"></ul>
+            </div>
+            <div>
+                <p>Beverage:</p>
+                <ul id="memberBeverage"></ul>
+            </div>
         </div>
         <div class="button-group">
             <button onclick="logout()" class="btn">Logout</button>
@@ -39,8 +45,45 @@
                     const response = await fetch(`http://localhost:3143/member-info?memberId=${userData.memberId}`);
                     const memberInfo = await response.json();
 
-                    document.getElementById('memberFood').textContent = memberInfo.food || 'No food items';
-                    document.getElementById('memberBeverage').textContent = memberInfo.beverage || 'No beverage items';
+                    // Clear previous items
+                    const foodList = document.getElementById('memberFood');
+                    const beverageList = document.getElementById('memberBeverage');
+                    foodList.innerHTML = '';
+                    beverageList.innerHTML = '';
+
+                    // Populate food list
+                    if (memberInfo.food && typeof memberInfo.food === 'string') {
+                        const li = document.createElement('li');
+                        li.textContent = memberInfo.food;
+                        foodList.appendChild(li);
+                    } else if (Array.isArray(memberInfo.food) && memberInfo.food.length > 0) {
+                        memberInfo.food.forEach(item => {
+                            const li = document.createElement('li');
+                            li.textContent = item;
+                            foodList.appendChild(li);
+                        });
+                    } else {
+                        const li = document.createElement('li');
+                        li.textContent = 'No food items';
+                        foodList.appendChild(li);
+                    }
+
+                    // Populate beverage list
+                    if (memberInfo.beverage && typeof memberInfo.beverage === 'string') {
+                        const li = document.createElement('li');
+                        li.textContent = memberInfo.beverage;
+                        beverageList.appendChild(li);
+                    } else if (Array.isArray(memberInfo.beverage) && memberInfo.beverage.length > 0) {
+                        memberInfo.beverage.forEach(item => {
+                            const li = document.createElement('li');
+                            li.textContent = item;
+                            beverageList.appendChild(li);
+                        });
+                    } else {
+                        const li = document.createElement('li');
+                        li.textContent = 'No beverage items';
+                        beverageList.appendChild(li);
+                    }
                 } catch (error) {
                     console.error('Error fetching member info:', error);
                 }

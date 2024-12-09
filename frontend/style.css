@@ -28,6 +28,32 @@ body {
     text-align: center;
 }
 
+#memberInfo ul {
+    list-style-type: none;
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#memberInfo ul li {
+    padding: 8px 12px;
+    margin: 5px 0;
+    background: rgba(255,255,255,0.2);
+    border-radius: 5px;
+    transition: background 0.8s ease;
+
+}
+
+#memberInfo ul li:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+#memberInfo p {
+    margin-bottom: 10px;
+    font-weight: 600;
+}
 
 .wrapper .input-box {
     position: relative;
