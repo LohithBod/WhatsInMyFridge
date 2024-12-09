@@ -16,16 +16,16 @@
         <div id="memberInfo">
             <h2>Fridge Contents</h2>
             <div>
-                <p>Food:</p>
-                <ul id="memberFood"></ul>
+                <p>Ingredients:</p>
+                <ul id="memberIngredient"></ul>
             </div>
             <div>
-                <p>Beverage:</p>
+                <p>Beverages:</p>
                 <ul id="memberBeverage"></ul>
             </div>
         </div>
         <div class="button-group">
-            <button onclick="logout()" class="btn">Logout</button>
+            <button onclick="logout()" class="btn">Sign Out</button>
             <button onclick="window.location.href='modifyItems.html'" class="btn">Modify Items</button>
             <button onclick="window.location.href='generateRecipe.html'"class="btn"> Generate Recipe</button>
         </div>
@@ -46,44 +46,45 @@
                     const memberInfo = await response.json();
 
                     // Clear previous items
-                    const foodList = document.getElementById('memberFood');
+                    const ingredientList = document.getElementById('memberIngredient');
                     const beverageList = document.getElementById('memberBeverage');
-                    foodList.innerHTML = '';
+                    ingredientList.innerHTML = '';
                     beverageList.innerHTML = '';
 
-                    // Populate food list
-                    if (memberInfo.food && typeof memberInfo.food === 'string') {
-                        const li = document.createElement('li');
-                        li.textContent = memberInfo.food;
-                        foodList.appendChild(li);
-                    } else if (Array.isArray(memberInfo.food) && memberInfo.food.length > 0) {
-                        memberInfo.food.forEach(item => {
+                    // Function to populate list with comma-separated items
+                    const populateList = (list, items) => {
+                        if (!items) {
                             const li = document.createElement('li');
-                            li.textContent = item;
-                            foodList.appendChild(li);
-                        });
-                    } else {
-                        const li = document.createElement('li');
-                        li.textContent = 'No food items';
-                        foodList.appendChild(li);
-                    }
+                            li.textContent = 'No items';
+                            list.appendChild(li);
+                            return;
+                        }
+
+                        // If items is a string, split by comma
+                        const itemArray = typeof items === 'string' 
+                            ? items.split(',').map(item => item.trim())
+                            : items;
+
+                        // If it's an array
+                        if (Array.isArray(itemArray) && itemArray.length > 0) {
+                            itemArray.forEach(item => {
+                                const li = document.createElement('li');
+                                li.textContent = item;
+                                list.appendChild(li);
+                            });
+                        } else {
+                            const li = document.createElement('li');
+                            li.textContent = 'No items';
+                            list.appendChild(li);
+                        }
+                    };
+
+                    // Populate ingredient list
+                    populateList(ingredientList, memberInfo.ingredient);
 
                     // Populate beverage list
-                    if (memberInfo.beverage && typeof memberInfo.beverage === 'string') {
-                        const li = document.createElement('li');
-                        li.textContent = memberInfo.beverage;
-                        beverageList.appendChild(li);
-                    } else if (Array.isArray(memberInfo.beverage) && memberInfo.beverage.length > 0) {
-                        memberInfo.beverage.forEach(item => {
-                            const li = document.createElement('li');
-                            li.textContent = item;
-                            beverageList.appendChild(li);
-                        });
-                    } else {
-                        const li = document.createElement('li');
-                        li.textContent = 'No beverage items';
-                        beverageList.appendChild(li);
-                    }
+                    populateList(beverageList, memberInfo.beverage);
+
                 } catch (error) {
                     console.error('Error fetching member info:', error);
                 }

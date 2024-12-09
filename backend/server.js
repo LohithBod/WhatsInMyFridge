@@ -39,7 +39,7 @@ app.get('/member-info', (req, res) => {
     }
 
     const query = `
-        SELECT food, beverage 
+        SELECT ingredient, beverage 
         FROM member_info 
         WHERE member_id = ?
     `;
@@ -59,7 +59,7 @@ app.get('/member-info', (req, res) => {
 });
 
 app.post('/update-member-items', (req, res) => {
-    const { memberId, food, beverage } = req.body;
+    const { memberId, ingredient, beverage } = req.body;
 
     if (!memberId) {
         return res.status(400).json({ message: 'Member ID is required' });
@@ -68,12 +68,12 @@ app.post('/update-member-items', (req, res) => {
     // Prepare the update query
     const query = `
         UPDATE member_info 
-        SET food = CONCAT_WS(', ', food, ?), 
+        SET ingredient = CONCAT_WS(', ', ingredient, ?), 
             beverage = CONCAT_WS(', ', beverage, ?) 
         WHERE member_id = ?
     `;
 
-    connection.query(query, [food || null, beverage || null, memberId], (err, result) => {
+    connection.query(query, [ingredient || null, beverage || null, memberId], (err, result) => {
         if (err) {
             console.error('Error updating member items:', err);
             return res.status(500).json({ message: 'Server error' });

@@ -10,19 +10,25 @@
 <body>
     <div class="wrapper">
         <h1>Modify Fridge Contents</h1>
+
+        <div class="toggle-switch">
+            <button id="addToggle" class="active">Add</button>
+            <button id="removeToggle">Remove</button>
+        </div>
+        
         <form id="modifyItemsForm">
             <div class="input-box-fb">
-                <label for="foodInput">Add Food Item :</label>
-                <input type="text" id="foodInput" name="food" placeholder="Enter Food Item">
+                <label for="ingredientInput">Add Ingredient Item :</label>
+                <input type="text" id="ingredientInput" name="ingredient" placeholder="Enter Ingredient Item">
                 <i class='bx bxs-dish'></i>
-                
+                <button type="button" id="updateIngredientBtn" class="btn-update">Update Ingredient</button>
             </div>
             <div class="input-box-fb">
                 <label for="beverageInput">Add Beverage Item :</label>
                 <input type="text" id="beverageInput" name="beverage" placeholder="Enter Beverage Item">
                 <i class='bx bxs-drink'></i>
+                <button type="button" id="updateBeverageBtn" class="btn-update">Update Beverage</button>
             </div>
-            <button type="submit" class="btn-fb">Update</button>
             <button type="button" onclick="window.location.href='welcome.html'" class="btn-fb">Dashboard</button>
         </form>
         <div id="message" class="message"></div>
@@ -30,22 +36,21 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const form = document.getElementById('modifyItemsForm');
+            const userData = JSON.parse(localStorage.getItem('userData'));
             const messageDiv = document.getElementById('message');
+            const ingredientInput = document.getElementById('ingredientInput');
+            const beverageInput = document.getElementById('beverageInput');
+            const updateIngredientBtn = document.getElementById('updateIngredientBtn');
+            const updateBeverageBtn = document.getElementById('updateBeverageBtn');
 
             // Verify user data on page load
-            const userData = JSON.parse(localStorage.getItem('userData'));
             if (!userData || !userData.memberId) {
                 window.location.href = 'index.html';
                 return;
             }
 
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                
-                const foodInput = document.getElementById('foodInput');
-                const beverageInput = document.getElementById('beverageInput');
-
+            // Update ingredient item
+            updateIngredientBtn.addEventListener('click', async () => {
                 try {
                     const response = await fetch('http://localhost:3143/update-member-items', {
                         method: 'POST',
@@ -54,7 +59,39 @@
                         },
                         body: JSON.stringify({
                             memberId: userData.memberId,
-                            food: foodInput.value,
+                            ingredient: ingredientInput.value,
+                            beverage: null
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        messageDiv.textContent = 'Ingredient item updated successfully!';
+                        messageDiv.style.color = 'green';
+                        ingredientInput.value = '';
+                    } else {
+                        messageDiv.textContent = result.message || 'Failed to update ingredient item';
+                        messageDiv.style.color = 'red';
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    messageDiv.textContent = 'An error occurred while updating ingredient item';
+                    messageDiv.style.color = 'red';
+                }
+            });
+
+            // Update beverage item
+            updateBeverageBtn.addEventListener('click', async () => {
+                try {
+                    const response = await fetch('http://localhost:3143/update-member-items', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            memberId: userData.memberId,
+                            ingredient: null, // Only update beverage
                             beverage: beverageInput.value
                         })
                     });
@@ -62,17 +99,16 @@
                     const result = await response.json();
 
                     if (response.ok) {
-                        messageDiv.textContent = 'Items updated successfully!';
+                        messageDiv.textContent = 'Beverage item updated successfully!';
                         messageDiv.style.color = 'green';
-                        foodInput.value = '';
                         beverageInput.value = '';
                     } else {
-                        messageDiv.textContent = result.message || 'Failed to update items';
+                        messageDiv.textContent = result.message || 'Failed to update beverage item';
                         messageDiv.style.color = 'red';
                     }
                 } catch (error) {
                     console.error('Error:', error);
-                    messageDiv.textContent = 'An error occurred while updating items';
+                    messageDiv.textContent = 'An error occurred while updating beverage item';
                     messageDiv.style.color = 'red';
                 }
             });
