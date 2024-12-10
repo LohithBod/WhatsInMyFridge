@@ -3,34 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modify Items</title>
+    <title>Modify Fridge Contents</title>
     <link rel="stylesheet" href="style.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 <body>
     <div class="wrapper">
         <h1>Modify Fridge Contents</h1>
-
+        
         <div class="toggle-switch">
             <button id="addToggle" class="active">Add</button>
             <button id="removeToggle">Remove</button>
         </div>
+
+        <div id="addSection">
+            <form id="modifyItemsForm">
+                <div class="input-box-fb">
+                    <label for="ingredientInput">Add Ingredient :</label>
+                    <input type="text" id="ingredientInput" name="ingredient" placeholder="Enter Ingredient">
+                    <i class='bx bxs-dish'></i>
+                    <button type="button" id="updateIngredientBtn" class="btn-update">Update</button>
+                </div>
+                <div class="input-box-fb">
+                    <label for="beverageInput">Add Beverage :</label>
+                    <input type="text" id="beverageInput" name="beverage" placeholder="Enter Beverage">
+                    <i class='bx bxs-drink'></i>
+                    <button type="button" id="updateBeverageBtn" class="btn-update">Update</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="removeSection">
+            <div id="ingredientRemoveSection">
+                <h3>Remove Ingredients</h3>
+                <ul id="ingredientRemoveList"></ul>
+                <button type="button" id="removeIngredientsBtn" class="btn-signout">Remove Selected</button>
+            </div>
+            <div id="beverageRemoveSection">
+                <h3>Remove Beverages</h3>
+                <ul id="beverageRemoveList"></ul>
+                <button type="button" id="removeBeveragesBtn" class="btn-signout">Remove Selected</button>
+            </div>
+        </div>
+
+        <button type="button" onclick="window.location.href='welcome.html'" class="btn-fb">Dashboard</button>
         
-        <form id="modifyItemsForm">
-            <div class="input-box-fb">
-                <label for="ingredientInput">Add Ingredient Item :</label>
-                <input type="text" id="ingredientInput" name="ingredient" placeholder="Enter Ingredient Item">
-                <i class='bx bxs-dish'></i>
-                <button type="button" id="updateIngredientBtn" class="btn-update">Update Ingredient</button>
-            </div>
-            <div class="input-box-fb">
-                <label for="beverageInput">Add Beverage Item :</label>
-                <input type="text" id="beverageInput" name="beverage" placeholder="Enter Beverage Item">
-                <i class='bx bxs-drink'></i>
-                <button type="button" id="updateBeverageBtn" class="btn-update">Update Beverage</button>
-            </div>
-            <button type="button" onclick="window.location.href='welcome.html'" class="btn-fb">Dashboard</button>
-        </form>
         <div id="message" class="message"></div>
     </div>
 
@@ -38,6 +55,29 @@
         document.addEventListener('DOMContentLoaded', () => {
             const userData = JSON.parse(localStorage.getItem('userData'));
             const messageDiv = document.getElementById('message');
+            
+            // Toggle functionality
+            const addToggle = document.getElementById('addToggle');
+            const removeToggle = document.getElementById('removeToggle');
+            const addSection = document.getElementById('addSection');
+            const removeSection = document.getElementById('removeSection');
+
+            addToggle.addEventListener('click', () => {
+                addToggle.classList.add('active');
+                removeToggle.classList.remove('active');
+                addSection.style.display = 'block';
+                removeSection.style.display = 'none';
+            });
+
+            removeToggle.addEventListener('click', () => {
+                removeToggle.classList.add('active');
+                addToggle.classList.remove('active');
+                removeSection.style.display = 'block';
+                addSection.style.display = 'none';
+                fetchMemberItems();
+            });
+
+            // Existing add item logic
             const ingredientInput = document.getElementById('ingredientInput');
             const beverageInput = document.getElementById('beverageInput');
             const updateIngredientBtn = document.getElementById('updateIngredientBtn');
@@ -48,6 +88,62 @@
                 window.location.href = 'index.html';
                 return;
             }
+
+            // Fetch and populate remove lists
+            async function fetchMemberItems() {
+                try {
+                    const response = await fetch(`http://localhost:9043/member-info?memberId=${userData.memberId}`);
+                    const memberInfo = await response.json();
+
+                    const ingredientRemoveList = document.getElementById('ingredientRemoveList');
+                    const beverageRemoveList = document.getElementById('beverageRemoveList');
+                    ingredientRemoveList.innerHTML = '';
+                    beverageRemoveList.innerHTML = '';
+
+                    // Populate ingredients list
+                    const ingredients = memberInfo.ingredient ? 
+                        (typeof memberInfo.ingredient === 'string' ? 
+                            memberInfo.ingredient.split(',').map(i => i.trim()) : 
+                            memberInfo.ingredient) : 
+                        [];
+
+                    ingredients.forEach(ingredient => {
+                        const li = document.createElement('li');
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.value = ingredient;
+                        const label = document.createElement('span');
+                        label.textContent = ingredient;
+                        li.appendChild(checkbox);
+                        li.appendChild(label);
+                        ingredientRemoveList.appendChild(li);
+                    });
+
+                    // Populate beverages list
+                    const beverages = memberInfo.beverage ? 
+                        (typeof memberInfo.beverage === 'string' ? 
+                            memberInfo.beverage.split(',').map(b => b.trim()) : 
+                            memberInfo.beverage) : 
+                        [];
+
+                    beverages.forEach(beverage => {
+                        const li = document.createElement('li');
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.value = beverage;
+                        const label = document.createElement('span');
+                        label.textContent = beverage;
+                        li.appendChild(checkbox);
+                        li.appendChild(label);
+                        beverageRemoveList.appendChild(li);
+                    });
+                } catch (error) {
+                    console.error('Error fetching member items:', error);
+                    messageDiv.textContent = 'Failed to fetch items';
+                    messageDiv.style.color = 'red';
+                }
+            }
+            
 
             // Update ingredient item
             updateIngredientBtn.addEventListener('click', async () => {
@@ -91,7 +187,7 @@
                         },
                         body: JSON.stringify({
                             memberId: userData.memberId,
-                            ingredient: null, // Only update beverage
+                            ingredient: null,
                             beverage: beverageInput.value
                         })
                     });
@@ -109,6 +205,94 @@
                 } catch (error) {
                     console.error('Error:', error);
                     messageDiv.textContent = 'An error occurred while updating beverage item';
+                    messageDiv.style.color = 'red';
+                }
+            });
+
+            // Remove ingredients
+            document.getElementById('removeIngredientsBtn').addEventListener('click', async () => {
+                const checkedIngredients = Array.from(
+                    document.querySelectorAll('#ingredientRemoveList input[type="checkbox"]:checked')
+                ).map(checkbox => checkbox.value);
+
+                if (checkedIngredients.length === 0) {
+                    messageDiv.textContent = 'Please select ingredients to remove';
+                    messageDiv.style.color = 'red';
+                    return;
+                }
+
+                try {
+                    const response = await fetch('http://localhost:3143/remove-member-items', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            memberId: userData.memberId,
+                            itemsToRemove: checkedIngredients,
+                            itemType: 'ingredient'
+                        })
+                    });
+
+                    const result = await response.json();
+                    console.log('Server Response:', result);
+
+                    if (response.ok) {
+                        messageDiv.textContent = 'Selected ingredients removed successfully!';
+                        messageDiv.style.color = 'green';
+                        fetchMemberItems(); // Refresh the list
+                    } else {
+                        messageDiv.textContent = result.message || 'Failed to remove ingredients';
+                        messageDiv.style.color = 'red';
+                        console.error('Error details:', result);
+                    }
+                } catch (error) {
+                    console.error('Full Error:', error);
+                    messageDiv.textContent = 'An error occurred while removing ingredients';
+                    messageDiv.style.color = 'red';
+                }
+            });
+
+            // Remove beverages
+            document.getElementById('removeBeveragesBtn').addEventListener('click', async () => {
+                const checkedBeverages = Array.from(
+                    document.querySelectorAll('#beverageRemoveList input[type="checkbox"]:checked')
+                ).map(checkbox => checkbox.value);
+
+                if (checkedBeverages.length === 0) {
+                    messageDiv.textContent = 'Please select beverages to remove';
+                    messageDiv.style.color = 'red';
+                    return;
+                }
+
+                try {
+                    const response = await fetch('http://localhost:3143/remove-member-items', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            memberId: userData.memberId,
+                            itemsToRemove: checkedBeverages,
+                            itemType: 'beverage'
+                        })
+                    });
+
+                    const result = await response.json();
+                    console.log('Server Response:', result);
+
+                    if (response.ok) {
+                        messageDiv.textContent = 'Selected beverages removed successfully!';
+                        messageDiv.style.color = 'green';
+                        fetchMemberItems(); // Refresh the list
+                    } else {
+                        messageDiv.textContent = result.message || 'Failed to remove beverages';
+                        messageDiv.style.color = 'red';
+                        console.error('Error details:', result);
+                    }
+                } catch (error) {
+                    console.error('Full Error:', error);
+                    messageDiv.textContent = 'An error occurred while removing beverages';
                     messageDiv.style.color = 'red';
                 }
             });

@@ -27,7 +27,7 @@
                 <a href="#">Forgot password?</a>
             </div>
 
-            <button type="submit" class="btn">Submit</button>
+            <button type="submit" class="btn-signin">Sign In</button>
             
             <div class="register-link">
                 <p>Don't have an account? <a href="registration.html">Register</a></p>
@@ -42,7 +42,7 @@
             const password = document.getElementById("password").value;
 
             try {
-                const response = await fetch('http://localhost:3143/login', {
+                const response = await fetch('http://localhost:9043/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

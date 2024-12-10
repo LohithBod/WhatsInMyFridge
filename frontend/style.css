@@ -16,7 +16,7 @@ body {
 }
 
 .wrapper {
-    width: 420px;
+    width: 520px;
     background: purple;
     color: #fff;
     border-radius: 10px;
@@ -200,7 +200,10 @@ body {
     text-decoration: underline;
 }
 
-.wrapper .btn {
+.wrapper .btn,
+.wrapper .btn-signout,
+.wrapper .btn-signin,
+.wrapper .btn-register {
     width: 100%;
     height: 45px;
     background: #fff;
@@ -280,14 +283,34 @@ body {
 
 .wrapper .btn,
 .wrapper .btn-fb,
-.wrapper .btn-update {
+.wrapper .btn-update,
+.wrapper .btn-signout,
+.wrapper .btn-signin,
+.wrapper .btn-register{
     transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 .wrapper .btn:hover,
 .wrapper .btn-fb:hover,
-.wrapper .btn-update:hover {
+.wrapper .btn-update:hover,
+.wrapper .btn-signin:hover,
+.wrapper .btn-signout:hover,
+.wrapper .btn-register:hover {
     background-color: rgba(255, 255, 255, 0.9);
-    transform: scale(1.025);
+    transform: scale(1.0175);
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
 }
+
+.wrapper .btn-signout:hover{
+    color: red;
+}
+
+.wrapper .btn-signin:hover{
+    color: blue;
+}
+
+.wrapper .btn-register:hover,
+.wrapper .btn-update:hover {
+    color: green;
+}
+

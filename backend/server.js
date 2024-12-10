@@ -7,10 +7,12 @@ const cors = require('cors');
 const crypto = require('crypto');
 
 const app = express();
-const port = process.env.PORT || 3143;
+const port = process.env.PORT || 9043;
 
 app.use(cors());
 app.use(bodyParser.json());
+
+
 
 const connection = mysql.createConnection({
     host: process.env.DB_HOST,
@@ -57,6 +59,70 @@ app.get('/member-info', (req, res) => {
         res.status(200).json(results[0]);
     });
 });
+
+app.post('/remove-member-items', (req, res) => {
+    const { memberId, itemsToRemove, itemType } = req.body;
+
+    if (!memberId || !itemsToRemove || !itemType) {
+        return res.status(400).json({ message: 'Member ID, items to remove, and item type are required' });
+    }
+
+    // Determine which column to update based on itemType
+    const column = itemType === 'ingredient' ? 'ingredient' : 'beverage';
+
+    // Fetch current items
+    const fetchQuery = `SELECT ${column} FROM member_info WHERE member_id = ?`;
+    
+    connection.query(fetchQuery, [memberId], (fetchErr, fetchResults) => {
+        if (fetchErr) {
+            console.error('Error fetching current items:', fetchErr);
+            return res.status(500).json({ message: 'Server error' });
+        }
+
+        if (fetchResults.length === 0) {
+            return res.status(404).json({ message: 'Member not found' });
+        }
+
+        // Get current items and convert to array
+        const currentItems = fetchResults[0][column] ? 
+            fetchResults[0][column].split(', ').map(item => item.trim()) : 
+            [];
+
+        // Remove selected items
+        const updatedItems = currentItems.filter(item => !itemsToRemove.includes(item));
+
+        // Update query
+        const updateQuery = `
+            UPDATE member_info 
+            SET ${column} = ? 
+            WHERE member_id = ?
+        `;
+        
+        console.log('Current Items:', currentItems);
+        console.log('Items to Remove:', itemsToRemove);
+        console.log("Updated Items:", updatedItems);
+
+        connection.query(updateQuery, [updatedItems.join(', ') || null, memberId], (updateErr, result) => {
+            if (updateErr) {
+                console.error('Error removing member items:', updateErr);
+                return res.status(500).json({ 
+                    message: 'Server error',
+                    error: updateErr.message 
+                });
+            }
+
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ message: 'Member not found or no items updated' });
+            }
+
+            res.status(200).json({ 
+                message: `${itemType.charAt(0).toUpperCase() + itemType.slice(1)}s removed successfully`,
+                remainingItems: updatedItems 
+            });
+        });
+    });
+});
+
 
 app.post('/update-member-items', (req, res) => {
     const { memberId, ingredient, beverage } = req.body;
