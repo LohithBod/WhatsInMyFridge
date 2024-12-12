@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Recipe</title>
+    <link rel="stylesheet" href="style.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+<body>
+    <div class="wrapper">
+        <h1>Generate Recipe</h1>
+        
+        <div id="recipeControls" class="ingredient-container">
+            <h3>Select Ingredients</h3>
+            <div id="ingredientRemoveSection" class="ingredient-listview">
+                <ul id="availableIngredientList"></ul>
+            </div>
+
+            <div class="recipe-generation-controls">
+                <select id="numberOfRecipes" class="select-option">
+                    <option value="1">1 Recipe</option>
+                    <option value="3">3 Recipes</option>
+                    <option value="5">5 Recipes</option>
+                </select>
+                <button id="generateRecipeBtn" class="btn-update">Generate Recipes</button>
+            </div>
+        </div>
+
+        <div id="recipeResults">
+            <h2>Generated Recipes</h2>
+            <div id="recipeList" class="recipes"></div>
+        </div>
+
+        <button type="button" onclick="window.location.href='welcome.html'" class="btn-fb">Dashboard</button>
+        
+        <div id="message" class="message"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const userData = JSON.parse(localStorage.getItem('userData'));
+            const messageDiv = document.getElementById('message');
+            const availableIngredientList = document.getElementById('availableIngredientList');
+
+
+            if (!userData || !userData.memberId) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Fetch member ingredients
+            async function fetchMemberIngredients() {
+                try {
+                    const response = await fetch(`http://localhost:9043/member-info?memberId=${userData.memberId}`);
+                    const memberInfo = await response.json();
+
+                    const ingredients = memberInfo.ingredient ? 
+                        (typeof memberInfo.ingredient === 'string' ? 
+                            memberInfo.ingredient.split(',').map(i => i.trim()) : 
+                            memberInfo.ingredient) : 
+                        [];
+
+                    // Populate available ingredient list
+                    availableIngredientList.innerHTML = '';
+                    ingredients.forEach(ingredient => {
+                        const li = document.createElement('li');
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.value = ingredient;
+                        const label = document.createElement('span');
+                        label.textContent = ingredient;
+                        li.appendChild(checkbox);
+                        li.appendChild(label);
+                        availableIngredientList.appendChild(li);
+                    });
+                } catch (error) {
+                    console.error('Error fetching member ingredients:', error);
+                    messageDiv.textContent = 'Failed to fetch ingredients';
+                    messageDiv.style.color = 'red';
+                }
+            }
+
+            // Generate Recipes
+            const generateRecipeBtn = document.getElementById('generateRecipeBtn');
+            generateRecipeBtn.addEventListener('click', async () => {
+                const selectedIngredients = Array.from(
+                    document.querySelectorAll('#availableIngredientList input[type="checkbox"]:checked')
+                ).map(checkbox => checkbox.value);
+
+                const numberOfRecipes = document.getElementById('numberOfRecipes').value;
+
+                if (selectedIngredients.length === 0) {
+                    messageDiv.textContent = 'Please select at least one ingredient';
+                    messageDiv.style.color = 'red';
+                    return;
+                }
+
+                try {
+                    const apiUrl = new URL('https://api.spoonacular.com/recipes/findByIngredients');
+                    apiUrl.searchParams.append('apiKey', 'd4b91e62e9e44e83996f9402b2be3600');
+                    apiUrl.searchParams.append('ingredients', selectedIngredients.join(',+'));
+                    apiUrl.searchParams.append('number', numberOfRecipes);
+                    apiUrl.searchParams.append('ranking', '2');
+                    apiUrl.searchParams.append('ignorePantry', true);
+
+                    const response = await fetch(apiUrl.toString());
+                    
+                    if (!response.ok) {
+                        const errorBody = await response.text();
+                        console.error('API Error Response:', errorBody);
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (data && data.length > 0) {
+                        displayRecipes(data);
+                    } else {
+                        messageDiv.textContent = 'No recipes found with the selected ingredients';
+                        messageDiv.style.color = 'red';
+                    }
+                } catch (error) {
+                    console.error('Error generating recipes:', error);
+                    messageDiv.textContent = 'Failed to generate recipes. ' + error.message;
+                    messageDiv.style.color = 'red';
+                }
+            });
+
+            // Display Recipes
+            function displayRecipes(recipes) {
+                const recipeList = document.getElementById('recipeList');
+                recipeList.innerHTML = '';
+
+                recipes.forEach(recipe => {
+                    const recipeCard = document.createElement('div');
+                    recipeCard.classList.add('recipe-card');
+                    recipeCard.innerHTML = `
+                        <div class="recipe-option">
+                        <img src="${recipe.image}" alt="${recipe.title}">
+                        <h3>${recipe.title}</h3>
+                        <p>Used Ingredients: ${recipe.usedIngredientCount}</p>
+                        <p>Missed Ingredients: ${recipe.missedIngredientCount}</p>
+                    `;
+                    recipeList.appendChild(recipeCard);
+                });
+            }
+
+            fetchMemberIngredients();
+        });
+    </script>
+</body>
+</html>

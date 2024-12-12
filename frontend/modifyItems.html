@@ -37,18 +37,18 @@
             <div id="ingredientRemoveSection">
                 <h3>Remove Ingredients</h3>
                 <ul id="ingredientRemoveList"></ul>
-                <button type="button" id="removeIngredientsBtn" class="btn-signout">Remove Selected</button>
+                <button type="button" id="removeIngredientsBtn" class="btn-remove">Update</button>
             </div>
             <div id="beverageRemoveSection">
                 <h3>Remove Beverages</h3>
                 <ul id="beverageRemoveList"></ul>
-                <button type="button" id="removeBeveragesBtn" class="btn-signout">Remove Selected</button>
+                <button type="button" id="removeBeveragesBtn" class="btn-remove">Update</button>
             </div>
         </div>
 
         <button type="button" onclick="window.location.href='welcome.html'" class="btn-fb">Dashboard</button>
-        
         <div id="message" class="message"></div>
+
     </div>
 
     <script>
@@ -148,7 +148,7 @@
             // Update ingredient item
             updateIngredientBtn.addEventListener('click', async () => {
                 try {
-                    const response = await fetch('http://localhost:3143/update-member-items', {
+                    const response = await fetch('http://localhost:9043/update-member-items', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -180,7 +180,7 @@
             // Update beverage item
             updateBeverageBtn.addEventListener('click', async () => {
                 try {
-                    const response = await fetch('http://localhost:3143/update-member-items', {
+                    const response = await fetch('http://localhost:9043/update-member-items', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -222,7 +222,7 @@
                 }
 
                 try {
-                    const response = await fetch('http://localhost:3143/remove-member-items', {
+                    const response = await fetch('http://localhost:9043/remove-member-items', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -266,7 +266,7 @@
                 }
 
                 try {
-                    const response = await fetch('http://localhost:3143/remove-member-items', {
+                    const response = await fetch('http://localhost:9043/remove-member-items', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
